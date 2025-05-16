@@ -8,6 +8,43 @@ I set out on a mission to understand and stop a network attack called LLMNR Pois
 
 ---
 
+## Understanding the Attack Vector
+
+Before diving into the technical demonstration, it's essential to understand how LLMNR poisoning works conceptually. The following diagrams illustrate the attack flow and why it's so effective.
+
+### The LLMNR Poisoning Attack Mechanics
+
+![Figure 1: LLMNR Poisoning Attack Flow - When DNS resolution fails, the victim broadcasts a query that the attacker intercepts, responding faster than legitimate servers and capturing the authentication hash.](screenshots/illustration1.png)
+
+In this attack scenario:
+
+**Left side:** When a Windows computer can't find a resource through DNS, it broadcasts an LLMNR request to the entire network asking, "Does anyone know do I connect to \\fff?" This query is visible to everyone on the network—including attackers. Notice how the victim is communicating with both the legitimate server and the attacker simultaneously.
+
+**Right side:** The attacker, who has been silently monitoring network traffic, quickly responds with "Yes, I know. Send me your hash and I'll connect you." The unsuspecting victim then sends authentication credentials to the attacker, who captures the NTLMv2 hash for offline cracking.
+
+### The DNS Failure Trigger
+
+![Figure 2: DNS Resolution Failure - The initial trigger for LLMNR poisoning occurs when a DNS server cannot resolve a resource name, causing Windows to fall back to broadcast-based name resolution methods.](screenshots/illustration2.png)
+
+This diagram shows the sequence that creates the vulnerability:
+
+1. The victim computer tries to connect to a network resource (\\fff) that doesn't exist or is mistyped
+2. The DNS server responds with "I have no idea what you're talking about"
+3. Instead of simply failing, Windows falls back to using the LLMNR protocol, broadcasting its request to the entire local network
+
+This fallback mechanism, while designed for convenience in small networks, creates a significant security gap that attackers can exploit with minimal effort.
+
+**Why This Vulnerability Persists:**
+- It's enabled by default in Windows environments
+- It requires no special privileges to exploit
+- Users have no visual indication they're being attacked
+- The entire attack can be performed passively
+- It works even on fully patched systems
+
+Now that we understand the concept, let's see how this attack works in practice.
+
+---
+
 ## The Hunt Begins
 
 **Objective:** Set up a controlled environment to observe LLMNR poisoning in action.
